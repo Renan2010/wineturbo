@@ -16,21 +16,21 @@ LICENSE for the details.
 From the top-level directory of the Wine source (which contains this file),
 run:
 
-```
-./configure
-make
+```bash
+~ $ ./configure
+~ $ make
 ```
 
 Then either install Wine:
 
-```
-make install
+```bash
+~ $ make install
 ```
 
 Or run Wine directly from the build directory:
 
-```
-./wine notepad
+```bash
+~ $ ./wine notepad
 ```
 
 Run programs as `wine program`. For more information and problem
