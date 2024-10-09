@@ -95,7 +95,7 @@ support kernel threads may be supported in the future.
 
 To build Wine, do:
 
-```
+```bash
 ~/wineturbo $ ./configure
 ~/wineturbo $ make
 ```
