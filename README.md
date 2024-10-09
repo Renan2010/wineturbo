@@ -96,8 +96,8 @@ support kernel threads may be supported in the future.
 To build Wine, do:
 
 ```
-./configure
-make
+~/wineturbo $ ./configure
+~/wineturbo $ make
 ```
 
 This will build the program "wine" and numerous support libraries/binaries.
