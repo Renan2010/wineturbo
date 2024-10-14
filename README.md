@@ -12,7 +12,7 @@ run:
 This program uses a level 2 compiler of the x86-64-v2 architecture and is NOT for legacy CPUs.
 
 ```bash
-~ $ CC=clang CXX=clang++ CFLAGS="-O3 -march=x86-64-v2" CXXFLAGS="-O3 -march=x86-64-v2" ./configure
+~ $ CC=clang CXX=clang++ CFLAGS="-O3 -march=x86-64-v2" CXXFLAGS="-O3 -march=x86-64-v2" ./configure --enable-win64
 ~ $ make -j $(nproc)
 ```
 
