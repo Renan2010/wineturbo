@@ -1,33 +1,28 @@
-## INTRODUCTION
+## INTRODUCTION FOR WINETURBO
+*wineturbo is a wine fork program to be as fast as possible*
 
-Wine is a program which allows running Microsoft Windows programs
-(including DOS, Windows 3.x, Win32, and Win64 executables) on Unix.
-It consists of a program loader which loads and executes a Microsoft
-Windows binary, and a library (called Winelib) that implements Windows
-API calls using their Unix, X11 or Mac equivalents.  The library may also
-be used for porting Windows code into native Unix executables.
-
-Wine is free software, released under the GNU LGPL; see the file
+Wineturbo is free software, released under the GNU LGPL; see the file
 LICENSE for the details.
-
 
 ## QUICK START
 
 From the top-level directory of the Wine source (which contains this file),
 run:
+> [!Note]
+This program uses a level 2 compiler of the x86-64-v2 architecture and is NOT for legacy CPUs.
 
 ```bash
 ~ $ CC=clang CXX=clang++ CFLAGS="-O3 -march=x86-64-v2" CXXFLAGS="-O3 -march=x86-64-v2" ./configure
 ~ $ make -j $(nproc)
 ```
 
-Then either install Wine:
+Then either install Wineturbo:
 
 ```bash
 ~ $ make install
 ```
 
-Or run Wine directly from the build directory:
+Or run Wineturbo directly from the build directory:
 
 ```bash
 ~ $ ./wine notepad
