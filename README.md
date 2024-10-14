@@ -17,8 +17,8 @@ From the top-level directory of the Wine source (which contains this file),
 run:
 
 ```bash
-~ $ ./configure
-~ $ make
+~ $ CC=clang CXX=clang++ CFLAGS="-O3 -march=x86-64-v2" CXXFLAGS="-O3 -march=x86-64-v2" ./configure
+~ $ make -j $(nproc)
 ```
 
 Then either install Wine:
