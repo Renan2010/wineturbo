@@ -23,6 +23,7 @@ arch=$(detect_arch)
 if [[ "$arch" == "x86-64-v4" || "$arch" == "x86-64-v3" || "$arch" == "x86-64-v2" ]]; then
     echo "Compiling for $arch"
     CC=clang CXX=clang++ CFLAGS="-O3 -march=${arch}" CXXFLAGS="-O3 -march=${arch}" ./configure --enable-win64
+    make -j $(nproc)
 else
     echo "Compilation not supported."
 fi
