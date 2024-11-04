@@ -1089,6 +1089,7 @@ enable_d3dx9_41
 enable_d3dx9_42
 enable_d3dx9_43
 enable_d3dxof
+enable_dataexchange
 enable_davclnt
 enable_dbgeng
 enable_dbghelp
@@ -1546,6 +1547,7 @@ enable_wldp
 enable_wmadmod
 enable_wmasf
 enable_wmi
+enable_wmilib_sys
 enable_wmiutils
 enable_wmp
 enable_wmphoto
@@ -21980,6 +21982,8 @@ wine_fn_config_makefile dlls/d3dx9_42 enable_d3dx9_42
 wine_fn_config_makefile dlls/d3dx9_43 enable_d3dx9_43
 wine_fn_config_makefile dlls/d3dxof enable_d3dxof
 wine_fn_config_makefile dlls/d3dxof/tests enable_tests
+wine_fn_config_makefile dlls/dataexchange enable_dataexchange
+wine_fn_config_makefile dlls/dataexchange/tests enable_tests
 wine_fn_config_makefile dlls/davclnt enable_davclnt
 wine_fn_config_makefile dlls/dbgeng enable_dbgeng
 wine_fn_config_makefile dlls/dbgeng/tests enable_tests
@@ -22716,6 +22720,7 @@ wine_fn_config_makefile dlls/wldp/tests enable_tests
 wine_fn_config_makefile dlls/wmadmod enable_wmadmod
 wine_fn_config_makefile dlls/wmasf enable_wmasf
 wine_fn_config_makefile dlls/wmi enable_wmi
+wine_fn_config_makefile dlls/wmilib.sys enable_wmilib_sys
 wine_fn_config_makefile dlls/wmiutils enable_wmiutils
 wine_fn_config_makefile dlls/wmiutils/tests enable_tests
 wine_fn_config_makefile dlls/wmp enable_wmp

@@ -1,5 +1,7 @@
 /*
- * Copyright 2000 Francois Gouget.
+ * Runtime Classes for dataexchange.dll
+ *
+ * Copyright 2024 Zhiyi Zhang for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,31 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-#ifndef __WINE_STDDEF_H
-#define __WINE_STDDEF_H
 
-#include <corecrt.h>
+#pragma makedep register
 
-#if defined(__GNUC__) || defined(__clang__)
-#define offsetof(s,m)       __builtin_offsetof(s,m)
-#elif defined(_WIN64)
-#define offsetof(s,m)       (size_t)((ptrdiff_t)&(((s*)NULL)->m))
-#else
-#define offsetof(s,m)       (size_t)&(((s*)NULL)->m)
-#endif
-
-typedef double max_align_t;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-_ACRTIMP __msvcrt_ulong __cdecl __threadid(void);
-_ACRTIMP __msvcrt_ulong __cdecl __threadhandle(void);
-#define _threadid    (__threadid())
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __WINE_STDDEF_H */
+#include "windows.applicationmodel.datatransfer.dragdrop.core.idl"
