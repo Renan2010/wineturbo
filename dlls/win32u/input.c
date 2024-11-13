@@ -2509,6 +2509,16 @@ BOOL WINAPI NtUserEnableMouseInPointer( BOOL enable )
 }
 
 /**********************************************************************
+ *       NtUserEnableMouseInPointerForThread    (win32u.@)
+ */
+BOOL WINAPI NtUserEnableMouseInPointerForThread( void )
+{
+    FIXME( "stub!\n" );
+    RtlSetLastWin32Error( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/**********************************************************************
  *       NtUserIsMouseInPointerEnabled    (win32u.@)
  */
 BOOL WINAPI NtUserIsMouseInPointerEnabled(void)
@@ -2674,4 +2684,14 @@ BOOL WINAPI NtUserClipCursor( const RECT *rect )
     SERVER_END_REQ;
 
     return ret;
+}
+
+/**********************************************************************
+ *       NtUserRegisterTouchPadCapable    (win32u.@)
+ */
+BOOL WINAPI NtUserRegisterTouchPadCapable( BOOL capable )
+{
+    FIXME( "capable %u stub!\n", capable );
+    RtlSetLastWin32Error( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
 }

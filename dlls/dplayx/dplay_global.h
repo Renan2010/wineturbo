@@ -131,7 +131,8 @@ struct GroupList
 };
 typedef struct GroupList* lpGroupList;
 
-typedef DWORD FN_COPY_MESSAGE( DPMSG_GENERIC *genericDst, DPMSG_GENERIC *genericSrc, BOOL ansi );
+typedef DWORD FN_COPY_MESSAGE( DPMSG_GENERIC *genericDst, DPMSG_GENERIC *genericSrc,
+                               DWORD genericSize, BOOL ansi );
 
 struct DPMSG
 {
@@ -140,6 +141,7 @@ struct DPMSG
   DPID toId;
   DPMSG_GENERIC* msg;
   FN_COPY_MESSAGE *copyMessage;
+  DWORD genericSize;
 };
 typedef struct DPMSG* LPDPMSG;
 
@@ -172,7 +174,6 @@ typedef struct tagDirectPlay2Data
 
   /* I/O Msg queues */
   DPQ_HEAD( DPMSG ) receiveMsgs; /* Msg receive queue */
-  DPQ_HEAD( DPMSG ) sendMsgs;    /* Msg send pending queue */
 
   /* Information about the service provider active on this connection */
   SPINITDATA spData;
@@ -212,6 +213,8 @@ HRESULT DP_HandleMessage( IDirectPlayImpl *This, void *messageBody,
         DWORD  dwMessageBodySize, void *messageHeader, WORD wCommandId, WORD wVersion,
         void **lplpReply, DWORD *lpdwMsgSize );
 DPSESSIONDESC2 *DP_DuplicateSessionDesc( const DPSESSIONDESC2 *src, BOOL dstAnsi, BOOL srcAnsi );
+HRESULT DP_HandleGameMessage( IDirectPlayImpl *This, void *messageBody, DWORD messageBodySize,
+                              DPID fromId, DPID toId );
 HRESULT DP_CreatePlayer( IDirectPlayImpl *This, void *msgHeader, DPID *lpid, DPNAME *lpName,
                          void *data, DWORD dataSize, void *spData, DWORD spDataSize, DWORD dwFlags,
                          HANDLE hEvent, struct PlayerData **playerData, BOOL bAnsi );
