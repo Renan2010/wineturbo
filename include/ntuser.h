@@ -279,7 +279,6 @@ struct post_dde_message_params
     WPARAM wparam;
     LPARAM lparam;
     DWORD dest_tid;
-    DWORD type;
 };
 
 /* NtUserRenderSynthesizedFormat params */
@@ -398,6 +397,7 @@ enum
     NtUserImeDriverCall       = 0x0305,
     NtUserSystemTrayCall      = 0x0306,
     NtUserDragDropCall        = 0x0307,
+    NtUserPostDdeCall         = 0x0308,
 };
 
 /* NtUserThunkedMenuItemInfo codes */
@@ -426,6 +426,13 @@ struct send_message_callback_params
 {
     SENDASYNCPROC callback;
     ULONG_PTR data;
+};
+
+struct post_dde_message_call_params
+{
+    void *ptr;
+    UINT  size;
+    DWORD dest_tid;
 };
 
 /* color index used to retrieve system 55aa brush */
@@ -605,6 +612,7 @@ enum wine_internal_message
     WM_WINE_KEYBOARD_LL_HOOK,
     WM_WINE_MOUSE_LL_HOOK,
     WM_WINE_IME_NOTIFY,
+    WM_WINE_WINDOW_STATE_CHANGED,
     WM_WINE_UPDATEWINDOWSTATE,
     WM_WINE_FIRST_DRIVER_MSG = 0x80001000,  /* range of messages reserved for the USER driver */
     WM_WINE_CLIPCURSOR = 0x80001ff0, /* internal driver notification messages */
@@ -661,8 +669,36 @@ enum wine_drag_drop_call
     WINE_DRAG_DROP_POST,
 };
 
+struct ntuser_property_list
+{
+    UINT64  data;
+    ATOM    atom;
+    BOOLEAN string;  /* Wine extension */
+};
+
+struct ntuser_name_list
+{
+    ULONG size;
+    ULONG count;
+    WCHAR strings[1];
+};
+
 #define WM_SYSTIMER  0x0118
 
+/* NtUserQueryWindow info classes */
+typedef enum _WINDOWINFOCLASS
+{
+    WindowProcess,
+    WindowProcess2, /* FIXME: same as WindowProcess? */
+    WindowThread,
+    WindowActiveWindow,
+    WindowFocusWindow,
+    WindowIsHung,
+    WindowClientBase,
+    WindowIsForegroundThread,
+    WindowDefaultImeWindow,
+    WindowDefaultInputContext,
+} WINDOWINFOCLASS;
 
 W32KAPI HKL     WINAPI NtUserActivateKeyboardLayout( HKL layout, UINT flags );
 W32KAPI BOOL    WINAPI NtUserAddClipboardFormatListener( HWND hwnd );
@@ -670,8 +706,10 @@ W32KAPI UINT    WINAPI NtUserAssociateInputContext( HWND hwnd, HIMC ctx, ULONG f
 W32KAPI BOOL    WINAPI NtUserAttachThreadInput( DWORD from, DWORD to, BOOL attach );
 W32KAPI HDC     WINAPI NtUserBeginPaint( HWND hwnd, PAINTSTRUCT *ps );
 W32KAPI NTSTATUS WINAPI NtUserBuildHimcList( UINT thread_id, UINT count, HIMC *buffer, UINT *size );
-W32KAPI NTSTATUS WINAPI NtUserBuildHwndList( HDESK desktop, ULONG unk2, ULONG unk3, ULONG unk4,
+W32KAPI NTSTATUS WINAPI NtUserBuildHwndList( HDESK desktop, HWND hwnd, BOOL children, BOOL non_immersive,
                                              ULONG thread_id, ULONG count, HWND *buffer, ULONG *size );
+W32KAPI NTSTATUS WINAPI NtUserBuildNameList( HWINSTA winsta, ULONG size, struct ntuser_name_list *buffer, ULONG *ret_size );
+W32KAPI NTSTATUS WINAPI NtUserBuildPropList( HWND hwnd, ULONG count, struct ntuser_property_list *buffer, ULONG *ret_count );
 W32KAPI ULONG_PTR WINAPI NtUserCallHwnd( HWND hwnd, DWORD code );
 W32KAPI ULONG_PTR WINAPI NtUserCallHwndParam( HWND hwnd, DWORD_PTR param, DWORD code );
 W32KAPI LRESULT WINAPI NtUserCallNextHookEx( HHOOK hhook, INT code, WPARAM wparam, LPARAM lparam );
@@ -843,6 +881,7 @@ W32KAPI LONG    WINAPI NtUserQueryDisplayConfig( UINT32 flags, UINT32 *paths_cou
                                                  UINT32 *modes_count, DISPLAYCONFIG_MODE_INFO *modes,
                                                  DISPLAYCONFIG_TOPOLOGY_ID *topology_id);
 W32KAPI UINT_PTR WINAPI NtUserQueryInputContext( HIMC handle, UINT attr );
+W32KAPI HANDLE  WINAPI NtUserQueryWindow( HWND hwnd, WINDOWINFOCLASS cls );
 W32KAPI HWND    WINAPI NtUserRealChildWindowFromPoint( HWND parent, LONG x, LONG y );
 W32KAPI BOOL    WINAPI NtUserRedrawWindow( HWND hwnd, const RECT *rect, HRGN hrgn, UINT flags );
 W32KAPI ATOM    WINAPI NtUserRegisterClassExWOW( const WNDCLASSEXW *wc, UNICODE_STRING *name, UNICODE_STRING *version,
@@ -943,6 +982,7 @@ enum
     NtUserCallNoParam_GetDesktopWindow,
     NtUserCallNoParam_GetDialogBaseUnits,
     NtUserCallNoParam_GetInputState,
+    NtUserCallNoParam_GetLastInputTime,
     NtUserCallNoParam_GetProcessDefaultLayout,
     NtUserCallNoParam_GetProgmanWindow,
     NtUserCallNoParam_GetShellWindow,
@@ -972,6 +1012,11 @@ static inline DWORD NtUserGetDialogBaseUnits(void)
 static inline BOOL NtUserGetInputState(void)
 {
     return NtUserCallNoParam( NtUserCallNoParam_GetInputState );
+}
+
+static inline DWORD NtUserGetLastInputTime(void)
+{
+    return NtUserCallNoParam( NtUserCallNoParam_GetLastInputTime );
 }
 
 static inline DWORD NtUserGetProcessDefaultLayout(void)
@@ -1019,6 +1064,7 @@ enum
     NtUserCallOneParam_GetSystemMetrics,
     NtUserCallOneParam_GetVirtualScreenRect,
     NtUserCallOneParam_MessageBeep,
+    NtUserCallOneParam_PostQuitMessage,
     NtUserCallOneParam_RealizePalette,
     NtUserCallOneParam_ReplyMessage,
     NtUserCallOneParam_SetCaretBlinkTime,
@@ -1123,6 +1169,11 @@ static inline INT NtUserGetSystemMetrics( INT index )
 static inline BOOL NtUserMessageBeep( UINT i )
 {
     return NtUserCallOneParam( i, NtUserCallOneParam_MessageBeep );
+}
+
+static inline void NtUserPostQuitMessage( INT exit_code )
+{
+    NtUserCallOneParam( exit_code, NtUserCallOneParam_PostQuitMessage );
 }
 
 static inline UINT NtUserRealizePalette( HDC hdc )
@@ -1258,9 +1309,9 @@ enum
     NtUserCallHwnd_ActivateOtherWindow,
     NtUserCallHwnd_ArrangeIconicWindows,
     NtUserCallHwnd_DrawMenuBar,
-    NtUserCallHwnd_GetDefaultImeWindow,
     NtUserCallHwnd_GetDialogInfo,
     NtUserCallHwnd_GetDpiForWindow,
+    NtUserCallHwnd_GetLastActivePopup,
     NtUserCallHwnd_GetMDIClientInfo,
     NtUserCallHwnd_GetParent,
     NtUserCallHwnd_GetWindowContextHelpId,
@@ -1301,11 +1352,6 @@ static inline DWORD NtUserGetWindowContextHelpId( HWND hwnd )
     return NtUserCallHwnd( hwnd, NtUserCallHwnd_GetWindowContextHelpId );
 }
 
-static inline HWND NtUserGetDefaultImeWindow( HWND hwnd )
-{
-    return UlongToHandle( NtUserCallHwnd( hwnd, NtUserCallHwnd_GetDefaultImeWindow ));
-}
-
 static inline void *NtUserGetDialogInfo( HWND hwnd )
 {
     return (void *)NtUserCallHwnd( hwnd, NtUserCallHwnd_GetDialogInfo );
@@ -1314,6 +1360,11 @@ static inline void *NtUserGetDialogInfo( HWND hwnd )
 static inline UINT NtUserGetDpiForWindow( HWND hwnd )
 {
     return NtUserCallHwnd( hwnd, NtUserCallHwnd_GetDpiForWindow );
+}
+
+static inline HWND NtUserGetLastActivePopup( HWND hwnd )
+{
+    return UlongToHandle( NtUserCallHwnd( hwnd, NtUserCallHwnd_GetLastActivePopup ));
 }
 
 static inline void *NtUserGetMDIClientInfo( HWND hwnd )

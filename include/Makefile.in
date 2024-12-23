@@ -58,6 +58,8 @@ SOURCES = \
 	bits5_0.idl \
 	bitsmsg.h \
 	bluetoothapis.h \
+	bthdef.h \
+	bthioctl.h \
 	bthsdpdef.h \
 	cderr.h \
 	cdosys.idl \
@@ -304,6 +306,7 @@ SOURCES = \
 	dxgitype.idl \
 	dxva.h \
 	dxva2api.idl \
+	dxvahd.idl \
 	dyngraph.idl \
 	endpointvolume.idl \
 	errorrep.h \

@@ -181,7 +181,7 @@ extern void free_map_addr( client_ptr_t base, mem_size_t size );
 extern struct memory_view *find_mapped_view( struct process *process, client_ptr_t base );
 extern struct memory_view *get_exe_view( struct process *process );
 extern struct file *get_view_file( const struct memory_view *view, unsigned int access, unsigned int sharing );
-extern const pe_image_info_t *get_view_image_info( const struct memory_view *view, client_ptr_t *base );
+extern const struct pe_image_info *get_view_image_info( const struct memory_view *view, client_ptr_t *base );
 extern int get_view_nt_name( const struct memory_view *view, struct unicode_str *name );
 extern void free_mapped_views( struct process *process );
 extern int get_page_size(void);
@@ -196,7 +196,7 @@ extern void set_session_mapping( struct mapping *mapping );
 extern const volatile void *alloc_shared_object(void);
 extern void free_shared_object( const volatile void *object_shm );
 extern void invalidate_shared_object( const volatile void *object_shm );
-extern obj_locator_t get_shared_object_locator( const volatile void *object_shm );
+extern struct obj_locator get_shared_object_locator( const volatile void *object_shm );
 
 #define SHARED_WRITE_BEGIN( object_shm, type )                          \
     do {                                                                \

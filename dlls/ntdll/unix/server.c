@@ -687,8 +687,8 @@ static void invoke_system_apc( const union apc_call *call, union apc_result *res
 /***********************************************************************
  *              server_select
  */
-unsigned int server_select( const select_op_t *select_op, data_size_t size, UINT flags,
-                            timeout_t abs_timeout, context_t *context, struct user_apc *user_apc )
+unsigned int server_select( const union select_op *select_op, data_size_t size, UINT flags,
+                            timeout_t abs_timeout, struct context_data *context, struct user_apc *user_apc )
 {
     unsigned int ret;
     int cookie;
@@ -701,7 +701,7 @@ unsigned int server_select( const select_op_t *select_op, data_size_t size, UINT
     struct
     {
         union apc_call call;
-        context_t  context[2];
+        struct context_data context[2];
     } reply_data;
 
     memset( &result, 0, sizeof(result) );
@@ -740,7 +740,7 @@ unsigned int server_select( const select_op_t *select_op, data_size_t size, UINT
 
             /* don't signal multiple times */
             if (size >= sizeof(select_op->signal_and_wait) && select_op->op == SELECT_SIGNAL_AND_WAIT)
-                size = offsetof( select_op_t, signal_and_wait.signal );
+                size = offsetof( union select_op, signal_and_wait.signal );
         }
         pthread_sigmask( SIG_SETMASK, &old_set, NULL );
         if (signaled) break;
@@ -763,7 +763,7 @@ unsigned int server_select( const select_op_t *select_op, data_size_t size, UINT
 /***********************************************************************
  *              server_wait
  */
-unsigned int server_wait( const select_op_t *select_op, data_size_t size, UINT flags,
+unsigned int server_wait( const union select_op *select_op, data_size_t size, UINT flags,
                           const LARGE_INTEGER *timeout )
 {
     timeout_t abs_timeout = timeout ? timeout->QuadPart : TIMEOUT_INFINITE;
@@ -794,8 +794,23 @@ unsigned int server_wait( const select_op_t *select_op, data_size_t size, UINT f
  */
 NTSTATUS WINAPI NtContinue( CONTEXT *context, BOOLEAN alertable )
 {
+    return NtContinueEx( context, ULongToPtr(alertable) );
+}
+
+
+/***********************************************************************
+ *              NtContinueEx  (NTDLL.@)
+ */
+NTSTATUS WINAPI NtContinueEx( CONTEXT *context, KCONTINUE_ARGUMENT *args )
+{
     struct user_apc apc;
     NTSTATUS status;
+    BOOL alertable;
+
+    if ((UINT_PTR)args > 0xff)
+        alertable = args->ContinueFlags & KCONTINUE_FLAG_TEST_ALERT;
+    else
+        alertable = !!args;
 
     if (alertable)
     {

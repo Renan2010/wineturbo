@@ -1395,7 +1395,6 @@ static NTSTATUS WINAPI wow64_NtUserPostDDEMessage( void *arg, ULONG size )
         LONG wparam;
         LONG lparam;
         DWORD dest_tid;
-        DWORD type;
     } params32;
 
     params32.hwnd = HandleToUlong( params->hwnd );
@@ -1403,7 +1402,6 @@ static NTSTATUS WINAPI wow64_NtUserPostDDEMessage( void *arg, ULONG size )
     params32.wparam = params->wparam;
     params32.lparam = params->lparam;
     params32.dest_tid = params->dest_tid;
-    params32.type = params->type;
     return dispatch_callback( NtUserPostDDEMessage, &params32, sizeof(params32) );
 }
 
@@ -1613,9 +1611,9 @@ NTSTATUS WINAPI wow64_NtUserBuildHimcList( UINT *args )
 NTSTATUS WINAPI wow64_NtUserBuildHwndList( UINT *args )
 {
     HDESK desktop = get_handle( &args );
-    ULONG unk2 = get_ulong( &args );
-    ULONG unk3 = get_ulong( &args );
-    ULONG unk4 = get_ulong( &args );
+    HWND hwnd = get_handle( &args );
+    BOOL children = get_ulong( &args );
+    BOOL non_immersive = get_ulong( &args );
     ULONG thread_id = get_ulong( &args );
     ULONG count = get_ulong( &args );
     UINT32 *buffer32 = get_ptr( &args );
@@ -1627,12 +1625,32 @@ NTSTATUS WINAPI wow64_NtUserBuildHwndList( UINT *args )
 
     if (!(buffer = Wow64AllocateTemp( count * sizeof(*buffer) ))) return STATUS_NO_MEMORY;
 
-    if ((status = NtUserBuildHwndList( desktop, unk2, unk3, unk4, thread_id, count, buffer, size )))
+    if ((status = NtUserBuildHwndList( desktop, hwnd, children, non_immersive,
+                                       thread_id, count, buffer, size )))
         return status;
 
-    for (i = 0; i < *size; i++)
-        buffer32[i] = HandleToUlong( buffer[i] );
+    for (i = 0; i < *size; i++) buffer32[i] = HandleToUlong( buffer[i] );
     return status;
+}
+
+NTSTATUS WINAPI wow64_NtUserBuildNameList( UINT *args )
+{
+    HWINSTA handle = get_handle( &args );
+    ULONG count = get_ulong( &args );
+    struct ntuser_name_list *props = get_ptr( &args );
+    ULONG *ret_count = get_ptr( &args );
+
+    return NtUserBuildNameList( handle, count, props, ret_count );
+}
+
+NTSTATUS WINAPI wow64_NtUserBuildPropList( UINT *args )
+{
+    HWND hwnd = get_handle( &args );
+    ULONG count = get_ulong( &args );
+    struct ntuser_property_list *props = get_ptr( &args );
+    ULONG *ret_count = get_ptr( &args );
+
+    return NtUserBuildPropList( hwnd, count, props, ret_count );
 }
 
 NTSTATUS WINAPI wow64_NtUserCallHwnd( UINT *args )
@@ -3656,6 +3674,22 @@ NTSTATUS WINAPI wow64_NtUserMessageCall( UINT *args )
             return status;
         }
         return NtUserMessageCall( hwnd, msg, wparam, lparam, result_info, type, ansi );
+
+    case NtUserPostDdeCall:
+        {
+            struct
+            {
+                ULONG ptr;
+                UINT  size;
+                DWORD dest_tid;
+            } *params32 = result_info;
+            struct post_dde_message_call_params params;
+
+            params.ptr = UlongToPtr(params32->ptr);
+            params.size = params32->size;
+            params.dest_tid = params32->dest_tid;
+            return NtUserMessageCall( hwnd, msg, wparam, lparam, &params, type, ansi );
+        }
     }
 
     return message_call_32to64( hwnd, msg, wparam, lparam, result_info, type, ansi );
@@ -3823,6 +3857,14 @@ NTSTATUS WINAPI wow64_NtUserQueryInputContext( UINT *args )
     UINT attr = get_ulong( &args );
 
     return NtUserQueryInputContext( handle, attr );
+}
+
+NTSTATUS WINAPI wow64_NtUserQueryWindow( UINT *args )
+{
+    HWND hwnd = get_handle( &args );
+    WINDOWINFOCLASS cls = get_ulong( &args );
+
+    return HandleToUlong( NtUserQueryWindow( hwnd, cls ));
 }
 
 NTSTATUS WINAPI wow64_NtUserRedrawWindow( UINT *args )

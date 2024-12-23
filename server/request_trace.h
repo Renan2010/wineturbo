@@ -8,13 +8,13 @@
 static void dump_abstime( const char *prefix, const abstime_t *val );
 static void dump_apc_result( const char *prefix, const union apc_result *val );
 static void dump_async_data( const char *prefix, const struct async_data *val );
-static void dump_generic_map( const char *prefix, const generic_map_t *val );
-static void dump_hw_input( const char *prefix, const hw_input_t *val );
+static void dump_generic_map( const char *prefix, const struct generic_map *val );
+static void dump_hw_input( const char *prefix, const union hw_input *val );
 static void dump_ioctl_code( const char *prefix, const ioctl_code_t *val );
-static void dump_irp_params( const char *prefix, const irp_params_t *val );
+static void dump_irp_params( const char *prefix, const union irp_params *val );
 static void dump_luid( const char *prefix, const struct luid *val );
-static void dump_obj_locator( const char *prefix, const obj_locator_t *val );
-static void dump_rectangle( const char *prefix, const rectangle_t *val );
+static void dump_obj_locator( const char *prefix, const struct obj_locator *val );
+static void dump_rectangle( const char *prefix, const struct rectangle *val );
 static void dump_timeout( const char *prefix, const timeout_t *val );
 static void dump_uint64( const char *prefix, const unsigned __int64 *val );
 static void dump_varargs_acl( const char *prefix, data_size_t size );
@@ -50,6 +50,7 @@ static void dump_varargs_udp_endpoints( const char *prefix, data_size_t size );
 static void dump_varargs_uints( const char *prefix, data_size_t size );
 static void dump_varargs_uints64( const char *prefix, data_size_t size );
 static void dump_varargs_unicode_str( const char *prefix, data_size_t size );
+static void dump_varargs_unicode_strings( const char *prefix, data_size_t size );
 static void dump_varargs_user_handles( const char *prefix, data_size_t size );
 static void dump_varargs_ushorts( const char *prefix, data_size_t size );
 
@@ -1761,16 +1762,29 @@ static void dump_get_window_parents_reply( const struct get_window_parents_reply
     dump_varargs_user_handles( ", parents=", cur_size );
 }
 
-static void dump_get_window_children_request( const struct get_window_children_request *req )
+static void dump_get_window_list_request( const struct get_window_list_request *req )
 {
     fprintf( stderr, " desktop=%04x", req->desktop );
-    fprintf( stderr, ", parent=%08x", req->parent );
-    fprintf( stderr, ", atom=%04x", req->atom );
+    fprintf( stderr, ", handle=%08x", req->handle );
     fprintf( stderr, ", tid=%04x", req->tid );
+    fprintf( stderr, ", children=%d", req->children );
+}
+
+static void dump_get_window_list_reply( const struct get_window_list_reply *req )
+{
+    fprintf( stderr, " count=%d", req->count );
+    dump_varargs_user_handles( ", windows=", cur_size );
+}
+
+static void dump_get_class_windows_request( const struct get_class_windows_request *req )
+{
+    fprintf( stderr, " parent=%08x", req->parent );
+    fprintf( stderr, ", child=%08x", req->child );
+    fprintf( stderr, ", atom=%04x", req->atom );
     dump_varargs_unicode_str( ", class=", cur_size );
 }
 
-static void dump_get_window_children_reply( const struct get_window_children_reply *req )
+static void dump_get_class_windows_reply( const struct get_class_windows_reply *req )
 {
     fprintf( stderr, " count=%d", req->count );
     dump_varargs_user_handles( ", children=", cur_size );
@@ -2012,7 +2026,13 @@ static void dump_close_winstation_request( const struct close_winstation_request
 
 static void dump_set_winstation_monitors_request( const struct set_winstation_monitors_request *req )
 {
-    dump_varargs_monitor_infos( " infos=", cur_size );
+    fprintf( stderr, " increment=%d", req->increment );
+    dump_varargs_monitor_infos( ", infos=", cur_size );
+}
+
+static void dump_set_winstation_monitors_reply( const struct set_winstation_monitors_reply *req )
+{
+    dump_uint64( " serial=", &req->serial );
 }
 
 static void dump_get_process_winstation_request( const struct get_process_winstation_request *req )
@@ -2031,13 +2051,14 @@ static void dump_set_process_winstation_request( const struct set_process_winsta
 
 static void dump_enum_winstation_request( const struct enum_winstation_request *req )
 {
-    fprintf( stderr, " index=%08x", req->index );
+    fprintf( stderr, " handle=%04x", req->handle );
 }
 
 static void dump_enum_winstation_reply( const struct enum_winstation_reply *req )
 {
-    fprintf( stderr, " next=%08x", req->next );
-    dump_varargs_unicode_str( ", name=", cur_size );
+    fprintf( stderr, " count=%u", req->count );
+    fprintf( stderr, ", total=%u", req->total );
+    dump_varargs_unicode_strings( ", names=", cur_size );
 }
 
 static void dump_create_desktop_request( const struct create_desktop_request *req )
@@ -2108,18 +2129,6 @@ static void dump_set_thread_desktop_request( const struct set_thread_desktop_req
 static void dump_set_thread_desktop_reply( const struct set_thread_desktop_reply *req )
 {
     dump_obj_locator( " locator=", &req->locator );
-}
-
-static void dump_enum_desktop_request( const struct enum_desktop_request *req )
-{
-    fprintf( stderr, " winstation=%04x", req->winstation );
-    fprintf( stderr, ", index=%08x", req->index );
-}
-
-static void dump_enum_desktop_reply( const struct enum_desktop_reply *req )
-{
-    fprintf( stderr, " next=%08x", req->next );
-    dump_varargs_unicode_str( ", name=", cur_size );
 }
 
 static void dump_set_user_object_info_request( const struct set_user_object_info_request *req )
@@ -3000,6 +3009,11 @@ static void dump_make_process_system_reply( const struct make_process_system_rep
     fprintf( stderr, " event=%04x", req->event );
 }
 
+static void dump_grant_process_admin_token_request( const struct grant_process_admin_token_request *req )
+{
+    fprintf( stderr, " handle=%04x", req->handle );
+}
+
 static void dump_get_token_info_request( const struct get_token_info_request *req )
 {
     fprintf( stderr, " handle=%04x", req->handle );
@@ -3484,7 +3498,8 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] =
     (dump_func)dump_set_window_info_request,
     (dump_func)dump_set_parent_request,
     (dump_func)dump_get_window_parents_request,
-    (dump_func)dump_get_window_children_request,
+    (dump_func)dump_get_window_list_request,
+    (dump_func)dump_get_class_windows_request,
     (dump_func)dump_get_window_children_from_point_request,
     (dump_func)dump_get_window_tree_request,
     (dump_func)dump_set_window_pos_request,
@@ -3516,7 +3531,6 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] =
     (dump_func)dump_close_desktop_request,
     (dump_func)dump_get_thread_desktop_request,
     (dump_func)dump_set_thread_desktop_request,
-    (dump_func)dump_enum_desktop_request,
     (dump_func)dump_set_user_object_info_request,
     (dump_func)dump_register_hotkey_request,
     (dump_func)dump_unregister_hotkey_request,
@@ -3592,6 +3606,7 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] =
     (dump_func)dump_release_kernel_object_request,
     (dump_func)dump_get_kernel_object_handle_request,
     (dump_func)dump_make_process_system_request,
+    (dump_func)dump_grant_process_admin_token_request,
     (dump_func)dump_get_token_info_request,
     (dump_func)dump_create_linked_token_request,
     (dump_func)dump_create_completion_request,
@@ -3779,7 +3794,8 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] =
     (dump_func)dump_set_window_info_reply,
     (dump_func)dump_set_parent_reply,
     (dump_func)dump_get_window_parents_reply,
-    (dump_func)dump_get_window_children_reply,
+    (dump_func)dump_get_window_list_reply,
+    (dump_func)dump_get_class_windows_reply,
     (dump_func)dump_get_window_children_from_point_reply,
     (dump_func)dump_get_window_tree_reply,
     (dump_func)dump_set_window_pos_reply,
@@ -3800,7 +3816,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] =
     (dump_func)dump_create_winstation_reply,
     (dump_func)dump_open_winstation_reply,
     NULL,
-    NULL,
+    (dump_func)dump_set_winstation_monitors_reply,
     (dump_func)dump_get_process_winstation_reply,
     NULL,
     (dump_func)dump_enum_winstation_reply,
@@ -3811,7 +3827,6 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] =
     NULL,
     (dump_func)dump_get_thread_desktop_reply,
     (dump_func)dump_set_thread_desktop_reply,
-    (dump_func)dump_enum_desktop_reply,
     (dump_func)dump_set_user_object_info_reply,
     (dump_func)dump_register_hotkey_reply,
     (dump_func)dump_unregister_hotkey_reply,
@@ -3887,6 +3902,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] =
     NULL,
     (dump_func)dump_get_kernel_object_handle_reply,
     (dump_func)dump_make_process_system_reply,
+    NULL,
     (dump_func)dump_get_token_info_reply,
     (dump_func)dump_create_linked_token_reply,
     (dump_func)dump_create_completion_reply,
@@ -4074,7 +4090,8 @@ static const char * const req_names[REQ_NB_REQUESTS] =
     "set_window_info",
     "set_parent",
     "get_window_parents",
-    "get_window_children",
+    "get_window_list",
+    "get_class_windows",
     "get_window_children_from_point",
     "get_window_tree",
     "set_window_pos",
@@ -4106,7 +4123,6 @@ static const char * const req_names[REQ_NB_REQUESTS] =
     "close_desktop",
     "get_thread_desktop",
     "set_thread_desktop",
-    "enum_desktop",
     "set_user_object_info",
     "register_hotkey",
     "unregister_hotkey",
@@ -4182,6 +4198,7 @@ static const char * const req_names[REQ_NB_REQUESTS] =
     "release_kernel_object",
     "get_kernel_object_handle",
     "make_process_system",
+    "grant_process_admin_token",
     "get_token_info",
     "create_linked_token",
     "create_completion",

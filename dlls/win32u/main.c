@@ -1127,10 +1127,20 @@ NTSTATUS SYSCALL_API NtUserBuildHimcList( UINT thread_id, UINT count, HIMC *buff
     SYSCALL_FUNC( NtUserBuildHimcList );
 }
 
-NTSTATUS SYSCALL_API NtUserBuildHwndList( HDESK desktop, ULONG unk2, ULONG unk3, ULONG unk4,
+NTSTATUS SYSCALL_API NtUserBuildHwndList( HDESK desktop, HWND hwnd, BOOL children, BOOL non_immersive,
                                           ULONG thread_id, ULONG count, HWND *buffer, ULONG *size )
 {
     SYSCALL_FUNC( NtUserBuildHwndList );
+}
+
+NTSTATUS SYSCALL_API NtUserBuildNameList( HWINSTA winsta, ULONG size, struct ntuser_name_list *buffer, ULONG *ret_size )
+{
+    SYSCALL_FUNC( NtUserBuildNameList );
+}
+
+NTSTATUS SYSCALL_API NtUserBuildPropList( HWND hwnd, ULONG count, struct ntuser_property_list *buffer, ULONG *ret_count )
+{
+    SYSCALL_FUNC( NtUserBuildPropList );
 }
 
 ULONG_PTR SYSCALL_API NtUserCallHwnd( HWND hwnd, DWORD code )
@@ -1873,6 +1883,11 @@ LONG SYSCALL_API NtUserQueryDisplayConfig( UINT32 flags, UINT32 *paths_count, DI
 UINT_PTR SYSCALL_API NtUserQueryInputContext( HIMC handle, UINT attr )
 {
     SYSCALL_FUNC( NtUserQueryInputContext );
+}
+
+HANDLE SYSCALL_API NtUserQueryWindow( HWND hwnd, WINDOWINFOCLASS cls )
+{
+    SYSCALL_FUNC( NtUserQueryWindow );
 }
 
 HWND SYSCALL_API NtUserRealChildWindowFromPoint( HWND parent, LONG x, LONG y )
